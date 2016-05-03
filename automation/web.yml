@@ -1,0 +1,50 @@
+- hosts: web
+  become: yes
+  become_user: root
+  vars:
+    - caddy_url: "https://github.com/mholt/caddy/releases/download/v0.8.3/caddy_linux_amd64.tar.gz"
+    - caddy_archive: "/tmp/caddy_linux_amd64.tar.gz"
+    - caddy_tmp: "/tmp/caddy"
+    - caddy_bin: "/usr/bin/caddy"
+    - caddy_user: "caddy"
+    - caddy_email: "brnstz@gmail.com"
+    - caddy_conf: "/etc/caddy/Caddyfile"
+
+  tasks:
+
+    - name: Download caddy
+      get_url: url="{{ caddy_url }}" dest="{{ caddy_archive }}"
+
+    - name: Create temp path
+      file: state=directory path="{{ caddy_tmp }}"
+
+    - name: Untar caddy
+      unarchive: copy=no src="{{ caddy_archive }}" dest="{{ caddy_tmp }}"
+
+    - name: Stop caddy if running
+      service: name=caddy state=stopped
+      ignore_errors: yes
+
+    - name: Copy caddy binary
+      command: cp "{{ caddy_tmp }}/caddy_linux_amd64" "{{ caddy_bin }}"
+
+    - name: Add ability to listen to lower ports to caddy binary
+      command: setcap cap_net_bind_service=+ep "{{ caddy_bin }}"
+
+    - name: Create caddy user
+      user: name="{{ caddy_user }}" 
+
+    - name: Create caddy config dir
+      file: state=directory mode=755 path=/etc/caddy 
+
+    - name: Create Caddyfile
+      template: src=templates/caddyfile.j2 dest="{{ caddy_conf }}"
+
+    - name: Create caddy upstart config
+      template: src=templates/caddy_upstart.conf.j2 dest=/etc/init/caddy.conf
+
+    - name: Reload upstart config
+      command: initctl reload-configuration
+
+    - name: Start caddy
+      service: name=caddy state=started

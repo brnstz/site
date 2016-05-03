@@ -1,0 +1,7 @@
+#!upstart
+
+description "Caddy"
+
+console log
+
+exec start-stop-daemon --start --make-pidfile --pidfile /var/run/caddy.pid --exec {{ caddy_bin }} --user {{ caddy_user }} -- -agree=true -conf="{{ caddy_conf }}" -email="{{ caddy_email }}"
