@@ -1,0 +1,16 @@
+test.brnstz.com {
+    root /home/bseitz/www/brnstz.com/
+}
+
+colors.test.brnstz.com {
+    proxy / localhost:8086
+}
+
+test.wholok.com {
+    root /home/bseitz/www/wholok.com/
+}
+
+test.themeasurements.com {
+    redir /nodana https://www.youtube.com/watch?v=CcRk-zdn8Ps 302
+    redir / https://themeasurements.bandcamp.com/ 302
+}

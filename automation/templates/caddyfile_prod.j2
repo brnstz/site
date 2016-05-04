@@ -1,0 +1,37 @@
+brnstz.com www.brnstz.com {
+    root /home/bseitz/www/brnstz.com/
+}
+
+bus.brnstz.com {
+    proxy / localhost:8000
+}
+
+highlit.brnstz.com {
+    proxy / http://highlit.brnstz.com:8080
+}
+
+cluster.brnstz.com {
+    proxy / localhost:8082
+}
+
+drink.brnstz.com {
+    proxy / localhost:8083
+}
+
+listen.brnstz.com {
+    proxy / localhost:8084
+}
+
+colors.brnstz.com {
+    proxy / localhost:8086
+}
+
+wholok.com, www.wholok.com {
+    root /home/bseitz/www/wholok.com/
+}
+
+themeasurements.com {
+    redir /nodana https://www.youtube.com/watch?v=CcRk-zdn8Ps 302
+    redir / https://themeasurements.bandcamp.com/ 302
+}
+

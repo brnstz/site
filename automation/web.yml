@@ -1,6 +1,8 @@
 - hosts: web
   become: yes
   become_user: root
+  vars_files:
+    - "group_vars/{{ inventory }}.yml"
   vars:
     - caddy_url: "https://github.com/mholt/caddy/releases/download/v0.8.3/caddy_linux_amd64.tar.gz"
     - caddy_archive: "/tmp/caddy_linux_amd64.tar.gz"
@@ -12,6 +14,20 @@
 
   tasks:
 
+    # Install packages
+    - name: install needed packages
+      apt: update_cache=yes pkg="{{ item }}" state=installed
+      with_items:
+        - monit
+
+    # Web content
+    - name: Create bseitz
+      user: name="bseitz"
+
+    - name: Copy web content
+      copy: src=../www dest=/home/bseitz
+
+    # Caddy
     - name: Download caddy
       get_url: url="{{ caddy_url }}" dest="{{ caddy_archive }}"
 
@@ -21,9 +37,12 @@
     - name: Untar caddy
       unarchive: copy=no src="{{ caddy_archive }}" dest="{{ caddy_tmp }}"
 
-    - name: Stop caddy if running
-      service: name=caddy state=stopped
+    - name: Stop services if running
+      service: name="{{ item }}" state=stopped
       ignore_errors: yes
+      with_items:
+        - caddy
+        - colors
 
     - name: Copy caddy binary
       command: cp "{{ caddy_tmp }}/caddy_linux_amd64" "{{ caddy_bin }}"
@@ -38,13 +57,29 @@
       file: state=directory mode=755 path=/etc/caddy 
 
     - name: Create Caddyfile
-      template: src=templates/caddyfile.j2 dest="{{ caddy_conf }}"
+      template: src="{{ caddy_template }}" dest="{{ caddy_conf }}"
 
     - name: Create caddy upstart config
       template: src=templates/caddy_upstart.conf.j2 dest=/etc/init/caddy.conf
 
+    # Colors
+    - name: Copy colors binary
+      copy: src="{{ lookup('env', 'GOPATH') }}/bin/linux_amd64/colors" dest=/usr/local/bin/colors mode=755
+
+    - name: Create colors upstart config
+      template: src=templates/colors_upstart.conf.j2 dest=/etc/init/colors.conf
+
+    # Monit
+    - name: Install monit config
+      template: src=templates/brnstz_monit.conf.j2 dest=/etc/monit/conf.d/brnstz_monit.conf
+
+    # Service init
     - name: Reload upstart config
       command: initctl reload-configuration
 
-    - name: Start caddy
-      service: name=caddy state=started
+    - name: Start services if running
+      service: name="{{ item }}" state=restarted
+      with_items:
+        - caddy
+        - colors
+        - monit

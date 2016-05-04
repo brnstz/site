@@ -1,0 +1,2 @@
+[web]
+66.246.138.161 ansible_ssh_user=bseitz
