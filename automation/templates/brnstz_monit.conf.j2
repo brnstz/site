@@ -1,0 +1,7 @@
+check process colors with pidfile /var/run/colors.pid
+    start program = "/usr/sbin/service colors start"
+    stop program = "/usr/sbin/service colors stop"
+
+check process caddy with pidfile /var/run/caddy.pid
+    start program = "/usr/sbin/service caddy start"
+    stop program = "/usr/sbin/service caddy stop"

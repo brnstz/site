@@ -1,0 +1,63 @@
+body, p {
+    font-family: Helvetica, arial, sans-serif;
+}
+
+.bigtxt {
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 25px;
+    text-align: center;
+    line-height: 140%;
+    margin-top: 100px;
+}
+
+a { 
+    color: #a20;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:visited { 
+    color: #a20;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: white;
+    background-color: #a20;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover:visited {
+    color: white;
+    background-color: #a20;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+
+.mainbox {
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+    background-color: #eee;
+}
+
+.header {
+    text-align: center;
+    font-weight: bold;
+}
+
+
+.topbox {
+    margin-top: 50px;
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 10px;
+    line-height: 150%;
+}

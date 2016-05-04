@@ -1,0 +1,714 @@
+<HTML>
+
+<HEAD>
+	
+	<TITLE>Programming IRC bots in Perl</TITLE>
+
+</HEAD>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-4033569-3");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+
+<BODY>
+
+<b><font color="red">WARNING: This is outdated, as it uses Net::IRC.  POE::Component::IRC is recommended these days.  If you ask someone for help with using Net::IRC, you will probably be told to switch to POE.  
+</font> </b><br><br>
+
+<p>
+
+Brian Seitz ( brian@wholok.com )<br>
+<a href="http://wholok.com/">http://wholok.com/</a><br>
+Created: 2001-11-10<br>
+Also available in <a href="http://science.webhostinggeeks.com/irc-bot">Serbo-Croatian</a> (translated by Anja Skrba from <a href="http://webhostinggeeks.com/">Webhostinggeeks.com</a>)
+<p>
+
+<a href="#whatis"><h2>What is an IRC bot?</h2></a>
+<ul>
+	<li>Automated client
+	<li>Examples
+	<li>Etiquette
+</ul>
+
+<a href="#need"><h2>What you will need to program an IRC bot</h2></a>
+<ul>
+	<li>Perl
+	<li>Net::IRC module
+	<li>An IRC server (own for debugging)
+	<li>Other software for functionality
+</ul>
+
+
+<a href="#hello"><h2>A very simple bot: HelloBot</h2></a>
+<ul>
+	<li>What HelloBot does
+	<li>Creating $irc object
+	<li>Creating $conn object
+	<li>Event driven programming	
+	<li>on_connect
+	<li>on_join
+	<li>irc-&gt;start()
+</ul>
+
+<a href="#roker"><h2>Handling other common events: RokerBot</h2></a>
+<ul>
+	<li>What RokerBot does
+	<li>on_public
+	<li>on_msg
+	<li>Other events in Event.pm
+</ul>
+
+<a href="#trivia"><h2>TriviaBot: using $irc-&gt;do_one_loop</h2></a>
+<ul>
+	<li>What TriviaBot does
+	<li>Handling timing
+	<li>Parsing commands
+</ul>
+
+<a href="#resources"><h2>Resources</h2></a>
+
+<hr>
+
+<a name="whatis"><h2>What is an IRC bot?</h2></a>
+
+<p>
+<h3>An automated client:</h3>
+<p>
+To an IRC server, an IRC bot is virtually indistinguishable from a regular
+IRC client (i.e., a person using a program such as
+<a href="http://www.xchat.org/">X-Chat</a>, 
+<a href="http://www.mirc.com/">mIRC</a>,
+or <a href="http://http://www.eterna.com.au/ircii/">ircii</a>).  However, 
+there's no person typing behind an IRC bot.  It only makes automated
+responses, based on (usually) what is happening on IRC.  An IRC bot
+can do things based on public messages, private messages, pings, or any
+other IRC event.  But a bot isn't limited to the world of IRC.  It can
+talk to a database, the web, a filesystem, or anything else you may imagine.
+
+<p>
+<h3>Examples:</h3>
+<p>
+
+Here are some common IRC bots that you may have seen in your travels already:
+
+<ul>
+	<li>File serving:  This type of bot emulates an FTP program by
+	interfacing with a filesystem.  Users talk to the bot using private
+	messages with commands like "ls" and "get".  The user can send and
+	receive files using DCC (a part of IRC that allows the initiation of 
+	peer-to-peer file transfers).
+	
+	<li>Channel administration: This bot maintains a list of channel
+	ops (people who run the channel) and makes sure they stay in control
+	of it, even if individual people are disconnected.  They may also
+	kick people from the channel who violate its etiquette (e.g., talking
+	in all caps, using colors, flooding, etc.)
+
+	<li>Games: Some bots will allow the people in the channel to text-based
+	games.  We'll learn later how to program a trivia bot.
+
+</ul>
+
+<p>
+<h3>Etiquette:</h3>
+<p>
+Many IRC networks restrict the use of bots.  When you log into an IRC server,
+check the MOTD (message of the day) to see what the policy is on bots.  If
+you violate this policy, you may be banned from the server.
+<p>
+In practice, however, bots aren't automatically detectable.  As long as your
+bot doesn't join an established channel and annoy people, you probably
+won't get in trouble.  But IRC channels are free; make your own, invite
+your friends, and have a ball.
+<p>
+If you want to be really safe, you can run your own IRC server.  If you're
+planning on extensive debugging, running an IRC on localhost will save you
+lots of time anyway.  Check out
+<a href="http://www.funet.fi/~irc/server/">generic IRCd</a> and
+<a href="http://bahamut.dal.net/">DALnet's Bahamut IRCd</a>.  These are 
+very stable programs and should compile easily on a UNIX system, however
+the specifics of configuration are beyond the scope of this document.
+
+<p>
+<a name="need"><h2>What you will need to program an IRC bot</h2></a>
+
+<p>
+<h3>Perl</h3>
+<p>
+You can program in IRC bot in any language.  Some IRC clients offer
+their own scripting languages that add automated functionality to your
+normal IRC session.  However, we'll be using
+<a href="http://www.cpan.org/">Perl</a>.
+
+<p>
+<h3>Net::IRC Module</h3>
+<p>
+Net::IRC is Perl module that talks the IRC protocol, abstracting most of the
+low-level details of programming an IRC bot.  It primarily works as
+event-driven programming (we'll get to that later).  You can get Net::IRC
+from <a href="http://www.cpan.org/">CPAN</a>.
+
+<p>
+<h3>IRC server</h3>
+<p>
+You'll need to find an IRC server to connect to.  A fairly
+comprehensive list can be found 
+<a href="http://www.irchelp.org/irchelp/networks/servers/">at irchelp.org</a>.
+However, for debugging purposes, you may want to run your own IRC server.
+
+<p>
+<h3>Other software for functionality</h3>
+<p>
+No IRC bot is an island.  While some IRC bots, such as a channel administration
+bot, can be useful without any interface to the outside world, we'll be
+using some non-IRC-specific software to make our bot more useful.
+<p>
+To program use the bots in this tutorial, you'll need the Perl modules
+LWP (Library for WWW access in Perl),
+HTML::Parser, and Text::Wrapper.  For TriviaBot, we'll be using the
+MySQL database and the Perl DBI module.  While learning about IRC bots, you
+may also find the Data::Dumper module useful.  Go to
+<a href="http://www.cpan.org/">CPAN</a> to get these if you don't have them
+already.
+
+<p>
+<a name="hello"><h2>A very simple bot: HelloBot</h2></a>
+
+<p>
+<h3>What HelloBot does</h3>
+<p>
+<a href="http://www.wholok.com/data/code/hello_nick.pl">HelloBot</a> is a greeting bot.  When a
+user, let's give him the nick "Joe," joins a channels, HelloBot will say
+"Hello, Joe!"  When Joe leaves, HelloBot will say "Goodbye, Joe!"  (Of course,
+since Joe has already left, he won't see the message, but other users
+in the channel will.)
+
+<pre>
+[02:03:53] HelloBot (brian@L36-72.DATANET.NYU.EDU) has joined ##
+[02:03:53] &lt;HelloBot&gt; Hello everyone!
+[02:03:53] &lt;HelloBot&gt; Hello, HelloBot!
+[02:04:20] Harry (brian@turtle.wholok.com) has joined ##
+[02:04:20] &lt;HelloBot&gt; Hello, Harry!
+[02:04:25] Sally (brian@turtle.wholok.com) has left ##
+[02:04:25] &lt;HelloBot&gt; Goodbye, Sally!
+[02:04:38] Harry (brian@turtle.wholok.com) has left ##
+[02:04:38] &lt;HelloBot&gt; Goodbye, Harry!
+</pre>
+
+<p>
+<h3>Creating $irc object</h3>
+<p>
+
+The first thing we need to do is create the $irc object.  The $irc object can
+handle more than one IRC connection, but for this tutorial we'll just
+be using one.  So, let's do it:
+
+<pre>
+
+use Net::IRC;
+
+# create the IRC object
+my $irc = new Net::IRC;
+
+</pre>
+
+<p>
+<h3>Creating $conn object</h3>
+<p>
+
+Now we need to create a connection object.  This requires quite a few
+arguments, which should make sense if you're familiar with IRC.  Our interactions
+with the IRC server will be through the $conn object.  
+
+<pre>
+
+# Create a connection object.  You can have more than one "connection" per
+# IRC object, but we'll just be working with one.
+my $conn = $irc-&gt;newconn(
+	Server 		=&gt; shift || 'turtle.wholok.com',
+	# Note: IRC port is normally 6667, but my firewall won't allow it
+	Port		=&gt; shift || '80',
+	Nick		=&gt; 'HelloBot',
+	Ircname		=&gt; 'I like to greet!',
+	Username	=&gt; 'hello'
+);
+
+# We're going to add this to the conn hash so we know what channel we
+# want to operate in.
+$conn-&gt;{channel} = shift || '##';
+
+</pre>
+
+<p>
+The "shift ||" parts allow us to change these parameters on the command
+line.  For example, I could run:
+
+<pre>
+./hello_nick.pl irc.slashnet.org 6667 #mychannel
+</pre>
+
+<p>
+<h3>Event driven programming</h3>
+<p>
+So how does HelloBot know when someone joins the channel?  In an iterative
+program, you would poll the IRC filehandle, parse the input, 
+and call a subroutine if you have a join or leave event.  Using Net::IRC
+removes the first two steps.  You merely have to decide which events you
+want to handle, and define subroutines to handle them.  
+
+<p>
+<h3>on_connect</h3>
+<p>
+
+The first event we have to handle is connecting.  We know that we're connected when
+we get the end of MOTD event, which is normally sent by an IRC server.  This event is
+given the value "376".  When we get the event, what we want to do join our channel
+and greet the channel.  Here's how:
+
+<pre>
+sub on_connect {
+
+	# shift in our connection object that is passed automatically
+	my $conn = shift;
+  
+	# when we connect, join our channel and greet it
+	$conn-&gt;join($conn-&gt;{channel});
+	$conn-&gt;privmsg($conn-&gt;{channel}, 'Hello everyone!');
+	$conn-&gt;{connected} = 1;
+}
+
+# The end of MOTD (message of the day), numbered 376 signifies we've connect
+$conn-&gt;add_handler('376', \&on_connect);
+
+</pre>
+
+<p>
+In the on_connect subroutine, we introduce two methods of the $conn object, join and privmsg.  join simply takes
+a channel as an argument.  prvimsg is a bit more complicated.  It is used to send both
+public and private messages (despite its name).  If you put a channel name as the first
+argument, you will send publically to a channel.  If you put a nick, you will send
+privately to the person with that nick.  The second argument is the string you want to send.
+
+<p>
+After we've defined our subroutine, we use the add_handler method to link it to the 
+event we're handling.  The first argument is the event identifier, which is the <i>string</i>
+"376," not the <i>number</i> 376.  It will not work if you send it as a number.  Most of the popular
+events are identified by alphabetic strings, as we'll see later.  The next argument is a reference
+to a function.
+
+<p>
+<h3>on_join</h3>
+<p>
+
+Next, we'll set up our join handler:
+
+<pre>
+sub on_join {
+
+	# get our connection object and the event object, which is passed
+	# with this event automatically
+	my ($conn, $event) = @_;
+
+	# this is the nick that just joined
+	my $nick = $event-&gt;{nick};
+	# say hello to the nick in public
+	$conn-&gt;privmsg($conn-&gt;{channel}, "Hello, $nick!");
+}
+
+$conn-&gt;add_handler('join', \&on_join);
+</pre>
+
+
+<p>
+The new thing here is the $event hash that is passed to the function.  Most event handlers will take this
+as an argument (and it's the only argument event handlers will take, not counting the object, of course).
+Depending on the event, the contents of this hash will vary.  Later, we'll see how to print out the 
+contents of $event to learn how to program for different events.  The only part of $event we're
+interested in here is the nick that initiated the event.  This is held in an obvious place, as we
+can see.  Next, we say "Hello" to the nick.
+
+
+<p>
+<h3>$irc-&gt;start()</h3>
+<p>
+
+Now that we've set up our handlers, we're ready to start IRC.  This is done with the simple
+command:
+
+<pre>
+$irc-&gt;start();
+</pre>
+
+<p>
+Now we should be connected and ready to roll.  Notice that we're using the first object we created, $irc, and
+not the $conn object.  This is because Net::IRC can handle more than one IRC connection in a single
+instance.
+
+<a name="roker"><h2>Handling other common events: RokerBot</h2></a>
+
+<p>
+<h3>What RokerBot does</h3>
+<p>
+
+<a href="http://www.wholok.com/data/code/roker.pl">RokerBot</a> (you'll also need <a href="http://www.wholok.com/data/code/WeatherGet.pm">WeatherGet.pm</a>
+and <a href="http://www.wholok.com/data/code/WeatherParse.pm">WeatherParse.pm</a>) retrieves weather information from
+<a href="http://www.weatherunderground.com/auto/roker/">http://www.weatherunderground.com/auto/roker/</a>
+and sends it to IRC.  It does this whenever a user says "!roker [city], [state]"
+
+<pre>
+[02:03:40] RokerBot (roker@turtle.wholok.com) has joined ##
+[02:03:40] &lt;RokerBot&gt; booya!  it's Roker time!
+[02:05:58] &lt;wholok&gt; !roker New York, NY
+[02:05:59] &lt;RokerBot&gt; wholok, it's 50 F in New York, NY right now. Wind 
+	is NNW at 8 mph.  Humidity is 61%.  Roker would say it's Clear.  
+	Tonight Mostly clear.  Lows in the lower 40s.  North wind 10 to 
+	15 mph becoming light. Thursday Mostly sunny.  Highs in the upper
+	50s.  Light and variable wind becoming south and increasing to 10 mph.
+[02:08:55] &lt;wholok&gt; !roker adsfoi34 234lkndf
+[02:08:57] &lt;RokerBot&gt; Unable to retrieve weather.  Sorry, wholok.
+</pre>
+
+<p>
+<h3>on_public</h3>
+<p>
+
+This is a new event for us to handle, the public message event.  Here's how RokerBot handles it:
+
+<pre>
+sub on_public {
+
+	# on an event, we get connection object and event hash
+	my ($conn, $event) = @_;
+
+	# this is what was said in the event
+	my $text = $event-&gt;{args}[0];
+	
+	# regex the text to see if it begins with !roker
+	if ($text =~ /^\!roker (.+)/) {
+		
+		# if so, pass the text and the nick off to the weather method
+		my $weather_text = weather($1, $event-&gt;{nick});
+	
+		# wrap text at 400 chars (about as much as you should put
+		# into a single IRC message
+		my $wrapped_text = $wrapper-&gt;wrap($weather_text);
+		my @texts = split("\n", $wrapped_text);
+		
+		# $event-&gt;{to}[0] is the channel where this was said
+		foreach (@texts) {
+			$conn-&gt;privmsg($event-&gt;{to}[0], $_);
+		}	
+	}
+}
+$conn-&gt;add_handler('public', \&on_public);
+
+
+</pre>
+
+<p>
+Here there are two new parts of the $event hash that we are dealing with.  The first one
+is $event-&gt;{args}.  This is a reference to an array.  The first value in this array is
+the text of the public message.  We regex this text to check if it begins with !roker.  If so, we
+pass off the rest of the message to the weather subroutine, which will return our
+weather text.
+
+<p>
+The other new $event hash part we are looking at is {to}.  This is an array reference of each entity the
+event was sent to.  In our case, we simply want our channel name, so we take the first
+part of that array.
+
+<p>
+From there, we wrap our text to a reasonable limit (sometimes the weather reports can be long), and 
+send each line to the channel.
+
+<p>
+<h3>on_msg</h3>
+<p>
+
+Our next event to handle is msg.  An msg is a private message sent to the IRC bot directly.  It is
+best to use msg events to interact with your bot if there are going to be a lot of interactions that
+could annoy other users.  There's no practical difference in using msg as opposed to public messages, so
+here's a quick example:
+
+<pre>
+sub on_msg {
+	my ($conn, $event) = @_;
+
+	# Under normal circumstances, simply reply to the nick that there's
+	# no reason to /msg RokerBot.
+	$conn-&gt;privmsg($event-&gt;{nick}, "Don't nobody /msg RokerBot.");
+	
+}
+$conn-&gt;add_handler('msg', \&on_msg);
+</pre>
+
+<p>
+Obviously, you could make this interaction more useful, but the
+example shows the concept.
+
+
+<p>
+<h3>Other events and methods</h3>
+<p>
+
+Check out the source code of Events.pm (or do a perldoc Net::IRC::Events)
+to see what other events an IRC bot can handle.  When experimenting
+with these events, you may want to use the module Data::Dumper to
+see what the event is sending you:
+
+<pre>
+
+use Data::Dumper;
+
+sub default {
+
+        # This is helpful to see what an event returns.  Data::Dumper will
+        # recursively reveal the structure of any value
+        my ($conn, $event) = @_;
+        print Dumper($event);
+}
+        
+# experiment with the cping event, printing out to standard output
+$conn-&gt;add_handler('cping', \&default);
+
+</pre>
+
+<p>
+Pretty much any IRC client command is a method of
+IRC::Connection.  If you look in the source of Connection.pm, you'll
+get fairly good documentation on how to call them.  For example, here's
+how you can use the mode method to make someone an op:
+
+<pre>
+
+$conn-$gt;mode('#linux', '+o', 'tux');
+
+</pre>
+
+<p>
+<a name="trivia"><h2>TriviaBot: using $irc-&gt;do_one_loop</h2></a>
+<p>	
+
+<h3>What TriviaBot does</h3>
+<p>
+<a href="http://www.wholok.com/data/code/triviabot.pl">TriviaBot</a> (you'll also need <a href="http://www.wholok.com/data/code/Trivia.pm">Trivia.pm</a>) takes questions from a database, asks them, and checks
+users for answers to the question.  There's on tricky thing, though,
+it has to give a 10 second interval between each question.  With
+our event driven model, we can't quite do this.
+
+<pre>
+
+[01:52:30] TriviaBot (brian@L36-72.DATANET.NYU.EDU) has joined ##
+[01:52:30] &lt;TriviaBot&gt; booya!  it's Trivia time!
+[01:53:10] &lt;Joe&gt; !trivon
+[01:53:10] &lt;TriviaBot&gt; Trivia is on!  First question in 10 seconds.
+[01:53:22] &lt;TriviaBot&gt; Pick a hand.
+[01:53:22] &lt;TriviaBot&gt; *****
+[01:53:25] &lt;Joe&gt; le
+[01:53:30] &lt;Joe&gt; left
+[01:53:34] &lt;wholok&gt; ri
+[01:53:34] &lt;TriviaBot&gt; ri***
+[01:53:35] &lt;wholok&gt; rig
+[01:53:35] &lt;TriviaBot&gt; rig**
+[01:53:39] &lt;Sally&gt; right
+[01:53:39] &lt;TriviaBot&gt; Correct answer by Sally!
+[01:53:39] &lt;TriviaBot&gt; right
+[01:53:39] &lt;TriviaBot&gt; Next question in 10 seconds
+[01:53:51] &lt;TriviaBot&gt; How large is an IPv6 address?
+[01:53:51] &lt;TriviaBot&gt; *** ****
+[01:53:56] &lt;wholok&gt; really big
+[01:54:01] &lt;Joe&gt; 128 bits
+[01:54:01] &lt;TriviaBot&gt; Correct answer by Joe!
+[01:54:01] &lt;TriviaBot&gt; 128 bits
+[01:54:01] &lt;TriviaBot&gt; Next question in 10 seconds
+[01:54:12] &lt;Joe&gt; !score
+[01:54:12] &lt;TriviaBot&gt; Score:
+[01:54:12] &lt;TriviaBot&gt; Sally: 1
+[01:54:12] &lt;TriviaBot&gt; Joe: 1
+[01:54:13] &lt;TriviaBot&gt; Who invented Perl?
+[01:54:13] &lt;TriviaBot&gt; ***** ****
+[01:54:28] &lt;Sally&gt; Larry rall
+[01:54:28] &lt;TriviaBot&gt; Larry *all
+[01:54:32] &lt;wholok&gt; larry wall
+[01:54:32] &lt;TriviaBot&gt; Correct answer by wholok!
+[01:54:32] &lt;TriviaBot&gt; Larry Wall
+[01:54:32] &lt;TriviaBot&gt; Next question in 10 seconds
+[01:54:36] &lt;wholok&gt; ha ha Sally!
+[01:54:44] &lt;TriviaBot&gt; Who is the Linux mascot?
+[01:54:44] &lt;TriviaBot&gt; ***
+[01:54:50] &lt;Joe&gt; penguin
+[01:54:56] &lt;wholok&gt; TUX!
+[01:54:56] &lt;TriviaBot&gt; Correct answer by wholok!
+[01:54:56] &lt;TriviaBot&gt; Tux
+[01:54:56] &lt;TriviaBot&gt; Next question in 10 seconds
+[01:55:08] &lt;TriviaBot&gt; What TV network does Mickey Mouse own?
+[01:55:08] &lt;TriviaBot&gt; ***
+[01:55:14] &lt;Sally&gt; NBC
+[01:55:14] &lt;TriviaBot&gt; *BC
+[01:55:19] &lt;wholok&gt; ABC
+[01:55:19] &lt;TriviaBot&gt; Correct answer by wholok!
+[01:55:19] &lt;TriviaBot&gt; ABC
+[01:55:19] &lt;TriviaBot&gt; Next question in 10 seconds
+[01:55:23] &lt;wholok&gt; !trivoff
+[01:55:23] &lt;TriviaBot&gt; Trivia is off!
+[01:55:25] &lt;wholok&gt; !score
+[01:55:25] &lt;TriviaBot&gt; Score:
+[01:55:25] &lt;TriviaBot&gt; Sally: 1
+[01:55:25] &lt;TriviaBot&gt; Joe: 1
+[01:55:25] &lt;TriviaBot&gt; wholok: 3
+
+</pre>
+
+<p>
+<h3>Handling timing</h3>
+<p>
+
+Our problem is fixed with the method do_one_loop.  This takes the
+place of the start method.  After establish our handlers, we call
+it like this:
+
+<pre>
+sub handle_trivia_loop {
+
+        my $conn = shift;
+
+        
+        $_ = $conn-&gt;{trivia}{status};
+        STATUS: {
+                if (/^getquestion$/) {
+                        # get question from trivia object
+                        $conn-&gt;{trivia}-&gt;get_question();
+                        # say the question, and show the hint
+                        repeat_question($conn);
+                        repeat_hint($conn);
+                        last STATUS;
+                }
+                if (/^waiting$/) {
+                        handle_waiting($conn);
+                        last STATUS;
+                }
+        }
+
+}
+
+# while forever, handle_trivia, then do an IRC loop
+while (1) {
+        
+        handle_trivia_loop($conn);
+        $irc-&gt;do_one_loop();
+}       
+</pre>
+
+<p>
+Inside of handle_trivia_loop, we check timestamps if we need a
+10 second interval.  We also get a new question if our
+status tell us so.  However, checking trivia answers is
+still done with the event driven model.
+
+<p>
+<h3>Parsing commands</h3>
+<p>
+
+One of the hallmarks of an IRC bot that takes public command is
+the syntax "!command".  This allows the bot to easily parse the
+traffic in the channel, since it's very unlikely that someone
+would want to say a real sentence starting with "!".
+
+<pre>
+
+sub on_public {
+
+        
+        # two args are passed on events, the connection object and a
+        # hash that describes the event
+        my ($conn, $event) = @_;
+        
+        # this is the text of the event, eg, what the person said
+        my $text = $event-&gt;{args}[0];
+
+        # we first check to see if it's a command (if it starts with !)
+        if ($text =~ /^\!(.+)$/) {
+                on_public_command($conn, $1, $event-&gt;{nick});
+        }
+        # otherwise, we assume it's a guess to the current question
+        else {
+                # check the answers
+                my $res = $conn-&gt;{trivia}-&gt;check_answer($event-&gt;{nick}, $text);
+                # if we've got the right answer, then celebrate
+                if ($res) {
+                        on_answer($conn, $res, $event-&gt;{nick});
+                }
+                # otherwise, repeat the current hint
+                else {
+                        repeat_hint($conn);
+                }       
+                        
+        }
+}
+
+sub on_public_command {
+        
+        
+        # here, we get the connection object, the text of the command, and
+        # the nick of the person who issued the command
+        my ($conn, $command, $nick) = @_;
+
+        # branch off given the nature of the command
+        $_ = $command;
+        COM: {
+                # this turns trivia on
+                if (/^trivon$/) {
+                        
+                        # don't turn on trivia unless it's off
+                        if ($conn-&gt;{trivia}{status} ne '') {
+                                last COM;
+                        }
+                        
+                        # set status to wait 10 seconds
+                        $conn-&gt;{trivia}{status} = 'waiting';
+                        # alert users that trivia is starting
+                        $conn-&gt;privmsg($conn-&gt;{channel}, "Trivia is on!  First question in 10 seconds.");
+                        # save the current timestamp
+                        $conn-&gt;{newtime} = time;
+                        # set the amount we've waited to 0
+                        $conn-&gt;{waittime} = 0;
+                        last COM;
+                
+                }
+                if (/^trivoff$/) {
+                        # set status to nothing 
+                        $conn-&gt;{trivia}{status} = '';
+                        # tell everyone that trivia over
+                        $conn-&gt;privmsg($conn-&gt;{channel}, "Trivia is off!");
+                        last COM;       
+                }
+                if (/^score$/) {
+                        # we want to see the scores, so let's have 'em
+                        handle_score($conn);
+                        last COM;
+                }       
+        }       
+}
+</pre>
+
+<p>
+<a name="resources"><h2>Resources</h2></a>
+
+<ul>
+	<li>Get modules: <a href="http://www.cpan.org/">Comprehensive Perl Archive Network (CPAN)</a>
+	<li>Find a server: <a href="http://www.irchelp.org/irchelp/networks/servers/">irchelp.org's server list</a>
+	<li>HelloBot: <a href="http://www.wholok.com/data/code/hello_nick.pl">hello_nick.pl</a>
+	<li>RokerBot: <a href="http://www.wholok.com/data/code/roker.pl">roker.pl</a>, <a href="http://www.wholok.com/data/code/WeatherGet.pm">WeatherGet.pm</a>, <a href="http://www.wholok.com/data/code/WeatherParse.pm">WeatherParse.pm</a>
+	<li>TriviaBot: <a href="http://www.wholok.com/data/code/triviabot.pl">triviabot.pl</a>, <a href="http://www.wholok.com/data/code/Trivia.pm">Trivia.pm</a>
+	
+</ul>
+
+
+
+</BODY>
+</HTML>

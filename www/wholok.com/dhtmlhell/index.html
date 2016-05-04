@@ -1,0 +1,363 @@
+<HTML>
+<HEAD>
+
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-4033569-3");
+pageTracker._initData();
+pageTracker._trackPageview();
+</script>
+
+<SCRIPT LANGUAGE="JavaScript">
+
+	
+	var head_count = 4;
+	var head_moves = new Array();
+	var head_intid = new Array();
+	var head_frame = new Array();
+	
+	var moves_per = 10;
+	var head_range = 10;
+	var slide_timeout = 10;
+	
+	var x;
+	var min_x = 160;
+	var min_y = 20;
+	var max_x = 700;
+	var max_y = 390;
+	var eframe_max = 4;
+
+
+	for (x = 0; x <= head_count; x++) {
+		head_intid[x] = 0;
+		head_moves[x] = 0;
+		head_frame[x] = 0;
+	}	
+	
+	function show_explode(num) {
+	
+		var head_div;
+		var explode_div;
+		var old_explode_div;
+
+		if (head_frame[num] > 0) {
+			old_explode_div = get_div("explode_frame" + (head_frame[num] - 1));
+			old_explode_div.visibility = "hidden";
+		}	
+
+		// if this is the last frame, then finish
+		if (head_frame[num] > eframe_max) {
+			clearInterval(head_intid[num]);
+			head_intid[num] = 0;
+			return;
+		}	
+
+		head_div = get_div("head" + num);
+		
+		explode_div = get_div("explode_frame" + head_frame[num]);
+		explode_div.left = parseInt(head_div.left) - 110;
+		explode_div.top = parseInt(head_div.top) - 100;
+		explode_div.visibility = "visible";
+		
+		head_frame[num]++;
+	}
+
+	function start_explode(num) {
+		
+		var head_div;
+		var explode_div;
+		
+		if (head_intid[num] != 0) {
+			clearInterval(head_intid[num]);
+			head_intid[num] = 0;
+		}
+		
+		head_div = get_div("head" + num);
+		head_div.visibility = "hidden";
+		
+		head_frame[num] = 0;
+		head_intid[num] = setInterval("show_explode(" + num + ")", 150);
+
+	}
+
+	function explode_head(num) {
+
+		// shake first
+		//shake_head(num);
+
+		//setTimeout("start_explode(" + num + ")", 400)
+		start_explode(num);
+		
+	}
+
+	function set_div(name, x, y) {
+
+		var head_div = get_div(name);
+		head_div.left = x;
+		head_div.top = y;
+	}	
+
+
+	function reset_heads() {
+		
+		var x;
+		var head_div;
+		var explode_div;
+
+		stop_heads();
+
+		set_div("head" + 0, min_x, min_y);
+		set_div("head" + 1, max_x, min_y);
+		set_div("head" + 2, min_x, max_y);
+		set_div("head" + 3, max_x, max_y);
+
+		for (x = 0; x < head_count; x++) {
+			head_div = get_div("head" + x);
+			head_div.visibility = "visible";
+		}
+
+	}
+	
+	
+	function stop_heads() {
+
+		var x;
+		
+		for (x = 0; x < head_count; x++) {
+			if (head_intid[x] != 0) {
+				clearInterval(head_intid[x]);
+				head_intid[x] = 0;
+			}	
+		}	
+		
+	}
+
+	function start_heads() {
+		
+		var x;
+		
+
+		for (x = 0; x < head_count; x++) {
+			if (head_intid[x] == 0) { slide_head(x);}
+		}	
+
+	}
+
+	function slide_head(num) {
+
+		var xdir = pick_direction();
+		var ydir = pick_direction();
+		if (head_intid[num] != 0) { clearInterval(head_initd[num]); }
+		head_intid[num] = setInterval("move_head(" + num + ", " + xdir + ", " + ydir + ")", slide_timeout);
+	}	
+
+	function shake_head(num) {
+		if (head_intid[num] != 0) {
+			clearInterval(head_intid[num]);
+			head_intid[num] = 0;
+		}
+		
+		head_intid[num] = setInterval("move_head(" + num + ", 0, 0)", slide_timeout);
+	}
+
+	function pick_direction() {
+		return parseInt(Math.random()*3 + 1);
+	}
+
+	function move_head(num, xdir, ydir) {
+		
+		var new_x, new_y;
+
+		head_div = get_div("head" + num);
+
+		if (xdir == 0) { xdir = pick_direction(); }	
+		if (ydir == 0) { ydir = pick_direction(); }	
+
+		new_y = parseInt(head_div.top);
+		new_x = parseInt(head_div.left);
+
+		switch (ydir) {
+			case 1:
+				new_y = parseInt(head_div.top) - head_range;
+				break;
+			case 2:
+				new_y = parseInt(head_div.top) + head_range;
+				break;
+		}
+		switch (xdir) {
+			case 1:
+				new_x = parseInt(head_div.left) - head_range;
+				break;
+			case 2:
+				new_x = parseInt(head_div.left) + head_range;
+				break;
+		}
+
+		if ( (new_x >= min_x) & (new_x <= max_x) & (new_y >= min_y) & (new_y <= max_y)) {
+			head_div.left = new_x;
+			head_div.top = new_y;
+		}	
+
+		head_moves[num]++;
+	
+		if (head_moves[num] > moves_per) {
+			head_moves[num] = 0;
+			clearInterval(head_intid[num]);
+			head_intid[num] = 0;
+			slide_head(num);
+		}	
+
+	}
+
+
+
+
+
+
+	var mh = new Array();		
+	var max = 2;
+	var fpx = 12;
+	var pad = 6;
+
+	mh[0] = 3 * fpx + pad;
+	mh[1] = 3 * fpx + pad;
+	mh[2] = 3 * fpx + pad;
+
+	function get_div(div_name) {
+
+		if (document.getElementById) {
+			return document.getElementById(div_name).style;
+		}
+		if (document.all) {
+			return document.all[div_name].style;
+		}
+		else {
+			return document[div_name];
+		}
+	}
+      
+      
+	function expand(num) {
+	
+		var menu_div;
+		var top_div;
+		var menux_div;
+		var topx_div;
+		var x;
+		var new_menu;
+		var new_top;
+	
+
+		menu_div = get_div("menu" + num);
+		top_div = get_div("top" + num);
+
+
+		if ( (menu_div.visibility == "visible") || (menu_div.visibility == "show"))	{
+			
+			for (x = num + 1; x <= max; x++) {
+				menux_div = get_div("menu" + x);
+				topx_div = get_div("top" + x);
+				menux_div.top = parseInt(menux_div.top) - mh[num];
+				topx_div.top = parseInt(topx_div.top) - mh[num];
+				
+			}
+			
+			menu_div.visibility = "hidden";
+		}
+		else {
+			for (x = num + 1; x <= max; x++) {
+				menux_div = get_div("menu" + x);
+				topx_div = get_div("top" + x);
+				menux_div.top = parseInt(menux_div.top) + mh[num];
+				topx_div.top = parseInt(topx_div.top) + mh[num];
+				
+			}	
+		
+			menu_div.visibility = "visible";
+		}	
+
+	}	
+
+
+	function show_say(num) {
+
+		var say_div = get_div("say" + num);
+		var head_div = get_div("head" + num);
+
+		say_div.top = parseInt(head_div.top) + 70;
+		say_div.left = parseInt(head_div.left) + 60;
+		say_div.visibility = "visible";
+
+		setTimeout("say_div.visibility = 'hidden'", 100);
+	}
+
+
+</SCRIPT>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" STYLE="font-family: verdana; font-size: 10px">
+
+<DIV ID="top0" STYLE="width: 150px; text-align: center; position:absolute; visibility:visible; left:5px; top:0px;">
+	<A HREF="javascript:expand(0);">:head control:</A>
+</DIV>
+<DIV ID="menu0" STYLE="width: 150px; text-align: center; position:absolute; visibility:hidden; left:5x; top:18px;">
+	<A HREF="javascript:start_heads();">start heads</A><BR>
+	<A HREF="javascript:stop_heads();">stop heads</A><BR>
+	<A HREF="javascript:reset_heads();">reset heads</A>
+</DIV>
+<DIV ID="top1" STYLE="width: 150px; text-align: center; position:absolute; visibility:visible; left:5px; top:18px;">
+	<A HREF="javascript:expand(1);">:i have some problems:</A>
+</DIV>
+<DIV ID="menu1" STYLE="width: 150px; text-align: center; position:absolute; visibility:hidden; left:5x; top:36px;">
+	isn't that obvious?<BR>
+	well...<BR>
+	yes
+</DIV>
+
+<DIV ID="top2" STYLE="width: 150px; text-align: center; position:absolute; visibility:visible; left:5px; top:36px;">
+	<A HREF="javascript:expand(2);">:challenge:</A>
+</DIV>
+<DIV ID="menu2" STYLE="width: 150px; text-align: center; position:absolute; visibility:hidden; left:5px; top:54px;">
+	try clicking the heads.<BR>
+	how about when they're moving?<BR>
+</DIV>
+
+<DIV ID="head0" STYLE="width: 75px; text-align: center; position:absolute; visibility:visible; left:160px; top:20px;">
+	<A HREF="javascript:explode_head(0);"><IMG BORDER="0" SRC="head0.gif"></A>
+</DIV>
+
+<DIV ID="head1" STYLE="width: 75px; text-align: center; position:absolute; visibility:visible; left:700px; top:20px;">
+	<A HREF="javascript:explode_head(1);"><IMG BORDER="0" SRC="head1.gif"></A>
+</DIV>
+
+
+<DIV ID="head2" STYLE="width: 75px; text-align: center; position:absolute; visibility:visible; left:160px; top:390px;">
+	<A HREF="javascript:explode_head(2);"><IMG BORDER="0" SRC="head2.gif"></A>
+</DIV>
+
+
+<DIV ID="head3" STYLE="width: 75px; text-align: center; position:absolute; visibility:visible; left:700px; top:390px;">
+	<A HREF="javascript:explode_head(3);"><IMG BORDER="0" SRC="head3.gif"></A>
+</DIV>
+
+<DIV ID="explode_frame0" STYLE="width: 300px; position:absolute; visibility:hidden; left:0px; top:0px;">
+	<IMG BORDER="0" SRC="explode_frame0.gif">
+</DIV>
+<DIV ID="explode_frame1" STYLE="width: 300px; position:absolute; visibility:hidden; left:0px; top:0px;">
+	<IMG BORDER="0" SRC="explode_frame1.gif">
+</DIV>
+<DIV ID="explode_frame2" STYLE="width: 300px; position:absolute; visibility:hidden; left:0px; top:0px;">
+	<IMG BORDER="0" SRC="explode_frame2.gif">
+</DIV>
+<DIV ID="explode_frame3" STYLE="width: 300px; position:absolute; visibility:hidden; left:0px; top:0px;">
+	<IMG BORDER="0" SRC="explode_frame3.gif">
+</DIV>
+<DIV ID="explode_frame4" STYLE="width: 300px; position:absolute; visibility:hidden; left:0px; top:0px;">
+	<IMG BORDER="0" SRC="explode_frame4.gif">
+</DIV>
+
+</BODY>
+</HTML>
