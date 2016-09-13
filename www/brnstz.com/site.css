@@ -2,16 +2,6 @@ body, p {
     font-family: Helvetica, arial, sans-serif;
 }
 
-.bigtxt {
-    width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    font-size: 25px;
-    text-align: center;
-    line-height: 140%;
-    margin-top: 100px;
-}
-
 a { 
     color: #a20;
     text-decoration: none;
@@ -38,26 +28,15 @@ a:hover:visited {
     font-weight: bold;
 }
 
-
-.mainbox {
-    width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 10px;
-    background-color: #eee;
+ul.header {
+    list-style-type: none;
 }
 
-.header {
-    text-align: center;
-    font-weight: bold;
+ul.items {
+    list-style-type: square;
+    padding-bottom: 30px;
 }
 
-
-.topbox {
-    margin-top: 50px;
-    width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-    padding: 10px;
+.container {
     line-height: 150%;
 }
