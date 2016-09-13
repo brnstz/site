@@ -1,36 +1,45 @@
 brnstz.com www.brnstz.com {
+    gzip
     root /home/bseitz/www/brnstz.com/
 }
 
 bus.brnstz.com {
+    gzip
     proxy / localhost:8000
 }
 
 highlit.brnstz.com {
+    gzip
     proxy / http://highlit.brnstz.com:8080
 }
 
 cluster.brnstz.com {
+    gzip
     proxy / localhost:8082
 }
 
 drink.brnstz.com {
+    gzip
     proxy / localhost:8083
 }
 
 listen.brnstz.com {
+    gzip
     proxy / localhost:8084
 }
 
 colors.brnstz.com {
+    gzip
     proxy / localhost:8086
 }
 
 wholok.com, www.wholok.com {
+    gzip
     root /home/bseitz/www/wholok.com/
 }
 
 www.themeasurements.com, themeasurements.com {
+    gzip
     redir /nodana https://www.youtube.com/watch?v=CcRk-zdn8Ps 302
     redir / https://themeasurements.bandcamp.com/ 302
 }
