@@ -4,4 +4,4 @@ description "Colors"
 
 console log
 
-exec start-stop-daemon --start --make-pidfile --pidfile /var/run/colors.pid --exec "/usr/local/bin/colors" -- --port 8086 --workers=3 --buffer=1000 --bgmax=100
+exec start-stop-daemon --start --make-pidfile --pidfile /var/run/colors.pid --nicelevel 19 --exec "/usr/local/bin/colors" -- --port 8086 --workers=3 --buffer=1000 --bgmax=100 
