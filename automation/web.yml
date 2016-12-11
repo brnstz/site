@@ -4,7 +4,8 @@
   vars_files:
     - "group_vars/{{ inventory }}.yml"
   vars:
-    - caddy_url: "https://github.com/mholt/caddy/releases/download/v0.9.3/caddy_linux_amd64.tar.gz"
+    #- caddy_url: "https://github.com/mholt/caddy/releases/download/v0.9.3/caddy_linux_amd64.tar.gz"
+    - caddy_url: "https://caddyserver.com/download/build?os=linux&arch=amd64&features=gandi"
     - caddy_archive: "/tmp/caddy_linux_amd64.tar.gz"
     - caddy_tmp: "/tmp/caddy"
     - caddy_bin: "/usr/bin/caddy"
@@ -28,8 +29,11 @@
       copy: src=../www dest=/home/bseitz
 
     # Caddy
+    - name: Remove old caddy y directory
+      file: state=absent path="{{ caddy_tmp }}" 
+
     - name: Download caddy
-      get_url: url="{{ caddy_url }}" dest="{{ caddy_archive }}"
+      get_url: url="{{ caddy_url }}" dest="{{ caddy_archive }}" force=yes
 
     - name: Create temp path
       file: state=directory path="{{ caddy_tmp }}"
@@ -45,7 +49,7 @@
         - colors
 
     - name: Copy caddy binary
-      command: cp "{{ caddy_tmp }}/caddy_linux_amd64" "{{ caddy_bin }}"
+      command: cp "{{ caddy_tmp }}/caddy" "{{ caddy_bin }}"
 
     - name: Add ability to listen to lower ports to caddy binary
       command: setcap cap_net_bind_service=+ep "{{ caddy_bin }}"

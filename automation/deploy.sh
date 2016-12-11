@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export ANSIBLE_HOST_KEY_CHECKING=False
+export VAULT_PASSWORD_FILE="~/.pwd"
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 inventory playbook-1.yml [playbook-2.yml ... ]"
@@ -9,4 +10,4 @@ if [ $# -lt 2 ]; then
 fi
 
 cd `dirname $0` &&
-ansible-playbook -v -e "inventory=$1" -i $1 ${@:2}
+ansible-playbook -v --vault-password-file=$VAULT_PASSWORD_FILE -e "inventory=$1" -i $1 ${@:2}
