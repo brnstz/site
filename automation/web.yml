@@ -4,7 +4,7 @@
   vars_files:
     - "group_vars/{{ inventory }}.yml"
   vars:
-    - caddy_url: "https://github.com/mholt/caddy/releases/download/v0.8.3/caddy_linux_amd64.tar.gz"
+    - caddy_url: "https://github.com/mholt/caddy/releases/download/v0.9.3/caddy_linux_amd64.tar.gz"
     - caddy_archive: "/tmp/caddy_linux_amd64.tar.gz"
     - caddy_tmp: "/tmp/caddy"
     - caddy_bin: "/usr/bin/caddy"
