@@ -5,5 +5,6 @@ description "Caddy"
 console log
 
 env GANDI_API_KEY="{{ gandi_api_key }}"
+limit nofile 8192 8192
 
 exec start-stop-daemon --start --make-pidfile --pidfile /var/run/caddy.pid --exec {{ caddy_bin }} --user {{ caddy_user }} -- -agree=true -conf="{{ caddy_conf }}" -email="{{ caddy_email }}"
