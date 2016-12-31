@@ -14,6 +14,7 @@ brnstz.com www.brnstz.com {
 bus.brnstz.com, token.live {
     gzip
     proxy / localhost:8000
+    log /var/log/upstart/access.log
 }
 
 highlit.brnstz.com {
@@ -50,5 +51,4 @@ www.themeasurements.com, themeasurements.com {
     redir /nodana https://www.youtube.com/watch?v=CcRk-zdn8Ps 302
     redir / https://themeasurements.bandcamp.com/ 302
 }
-
 
